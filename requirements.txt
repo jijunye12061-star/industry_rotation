@@ -1,0 +1,8 @@
+pandas==2.3.3
+oracledb==3.4.1
+python-dotenv==1.2.1
+tqdm==4.67.1
+sqlalchemy==2.0.45
+pymysql==1.1.2
+matplotlib==3.10.8
+seaborn==0.13.2
