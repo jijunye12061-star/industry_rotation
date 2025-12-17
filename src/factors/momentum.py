@@ -24,7 +24,7 @@ from data.loader import get_loader
 logger = logging.getLogger(__name__)
 
 
-@register_factor("momentum_20")
+@register_factor("momentum")
 class MomentumFactor(BaseFactor):
     """
     20日动量因子
@@ -33,7 +33,7 @@ class MomentumFactor(BaseFactor):
     """
 
     def __init__(self,
-                 name: str = "momentum_20",
+                 name: str = "momentum",
                  window: int = 20,
                  preprocess: bool = True,
                  standardize_method: Optional[Literal['zscore', 'rank', 'minmax']] = 'zscore',
@@ -59,7 +59,7 @@ class MomentumFactor(BaseFactor):
     def compute(self, config: FactorConfig) -> pd.DataFrame:
         """计算20日动量因子"""
         # 扩展开始日期以获取足够的历史数据
-        extended_start = (pd.to_datetime(config.start_date) - timedelta(days=60)).strftime('%Y-%m-%d')
+        extended_start = (pd.to_datetime(config.start_date) - timedelta(days=60)).strftime('%Y-%m-%d')  # type: ignore
 
         # 获取价格数据
         loader = get_loader()
@@ -76,7 +76,7 @@ class MomentumFactor(BaseFactor):
         return momentum_rebalance
 
 
-@register_factor("average_momentum_20")
+@register_factor("average_momentum")
 class AverageMomentumFactor(BaseFactor):
     """
     平均动量因子
@@ -85,7 +85,7 @@ class AverageMomentumFactor(BaseFactor):
     """
 
     def __init__(self,
-                 name: str = "average_momentum_20",
+                 name: str = "average_momentum",
                  window: int = 20,
                  preprocess: bool = True,
                  standardize_method: Optional[Literal['zscore', 'rank', 'minmax']] = 'zscore',
@@ -111,7 +111,7 @@ class AverageMomentumFactor(BaseFactor):
     def compute(self, config: FactorConfig) -> pd.DataFrame:
         """计算平均动量因子"""
         # 扩展开始日期
-        extended_start = (pd.to_datetime(config.start_date) - timedelta(days=60)).strftime('%Y-%m-%d')
+        extended_start = (pd.to_datetime(config.start_date) - timedelta(days=60)).strftime('%Y-%m-%d')  # type: ignore
 
         # 获取价格数据
         loader = get_loader()
@@ -131,7 +131,7 @@ class AverageMomentumFactor(BaseFactor):
         return avg_momentum_rebalance
 
 
-@register_factor("marginal_average_momentum_20")
+@register_factor("marginal_average_momentum")
 class MarginalAverageMomentumFactor(BaseFactor):
     """
     边际平均动量因子
@@ -140,7 +140,7 @@ class MarginalAverageMomentumFactor(BaseFactor):
     """
 
     def __init__(self,
-                 name: str = "marginal_average_momentum_20",
+                 name: str = "marginal_average_momentum",
                  window: int = 20,
                  preprocess: bool = True,
                  standardize_method: Optional[Literal['zscore', 'rank', 'minmax']] = 'zscore',
@@ -166,7 +166,7 @@ class MarginalAverageMomentumFactor(BaseFactor):
     def compute(self, config: FactorConfig) -> pd.DataFrame:
         """计算边际平均动量因子"""
         # 扩展开始日期（需要更多历史数据）
-        extended_start = (pd.to_datetime(config.start_date) - timedelta(days=120)).strftime('%Y-%m-%d')
+        extended_start = (pd.to_datetime(config.start_date) - timedelta(days=120)).strftime('%Y-%m-%d')  # type: ignore
 
         # 获取价格数据
         loader = get_loader()

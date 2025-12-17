@@ -22,7 +22,7 @@ from data.loader import get_loader
 logger = logging.getLogger(__name__)
 
 
-@register_factor("potential_energy_20")
+@register_factor("potential_energy")
 class PotentialEnergyFactor(BaseFactor):
     """
     累积势能因子
@@ -33,7 +33,7 @@ class PotentialEnergyFactor(BaseFactor):
     """
 
     def __init__(self,
-                 name: str = "potential_energy_20",
+                 name: str = "potential_energy",
                  window: int = 20,
                  epsilon: float = 0.1,
                  preprocess: bool = True,

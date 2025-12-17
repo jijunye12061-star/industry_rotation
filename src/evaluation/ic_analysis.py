@@ -159,16 +159,16 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
     # 使用真实因子测试
-    from factors.marginal_beta import MarginalBetaFactor, UpsideBetaFactor
+    from factors.base import create_factor
 
     main_config = FactorConfig(
-        start_date='2016-01-01',
+        start_date='2021-01-01',
         end_date='2025-03-31',
         frequency='monthly'
     )
 
     # 计算因子
-    factor_calculator = UpsideBetaFactor(window=21, winsorize=None)
+    factor_calculator = create_factor("upside_beta", window=21, winsorize=None)
     marginal_beta = factor_calculator(main_config)
 
     # IC分析
