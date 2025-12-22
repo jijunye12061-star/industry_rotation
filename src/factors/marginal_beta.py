@@ -69,9 +69,9 @@ class MarginalBetaFactor(BaseFactor):
         beta_df = self._calculate_rolling_beta(industry_ret, market_ret)
 
         # 筛选调仓日并差分（保持不变）
-        rebalance_dates = config.get_rebalance_dates()
-        beta_rebalance = beta_df.reindex(rebalance_dates)
-        marginal_beta = beta_rebalance.diff(periods=1)
+        extended_dates = config.get_extended_rebalance_dates()
+        beta_extended = beta_df.reindex(extended_dates)
+        marginal_beta = beta_extended.diff(periods=1)
 
         logger.info(f"边际贝塔因子计算完成，形状: {marginal_beta.shape}")
         return marginal_beta
@@ -156,9 +156,9 @@ class UpsideBetaFactor(BaseFactor):
         upside_beta_df = self._calculate_rolling_upside_beta(industry_ret, market_ret)
 
         # 筛选调仓日并差分
-        rebalance_dates = config.get_rebalance_dates()
-        beta_rebalance = upside_beta_df.reindex(rebalance_dates)
-        marginal_upside_beta = beta_rebalance.diff(periods=1)
+        extended_dates = config.get_extended_rebalance_dates()
+        beta_extended = upside_beta_df.reindex(extended_dates)
+        marginal_upside_beta = beta_extended.diff(periods=1)
 
         logger.info(f"边际上行贝塔因子计算完成，形状: {marginal_upside_beta.shape}")
         return marginal_upside_beta
@@ -261,9 +261,9 @@ class DownsideBetaFactor(BaseFactor):
         downside_beta_df = self._calculate_rolling_downside_beta(industry_ret, market_ret)
 
         # 筛选调仓日并差分
-        rebalance_dates = config.get_rebalance_dates()
-        beta_rebalance = downside_beta_df.reindex(rebalance_dates)
-        marginal_downside_beta = beta_rebalance.diff(periods=1)
+        extended_dates = config.get_extended_rebalance_dates()
+        beta_extended = downside_beta_df.reindex(extended_dates)
+        marginal_downside_beta = beta_extended.diff(periods=1)
 
         logger.info(f"边际下行贝塔因子计算完成，形状: {marginal_downside_beta.shape}")
         return marginal_downside_beta
@@ -324,7 +324,7 @@ if __name__ == '__main__':
 
     # 创建配置
     main_config = FactorConfig(
-        start_date='2024-01-01',
+        start_date='2023-12-29',
         end_date='2025-03-31',
         frequency='monthly'
     )

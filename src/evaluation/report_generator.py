@@ -18,7 +18,7 @@ from plotly.subplots import make_subplots
 
 from factors.factor_config import FactorConfig
 from evaluation.ic_analysis import ICAnalyzer
-from evaluation.group_analysis import GroupAnalyzer
+from evaluation.group_analysis import LongShortAnalyzer
 
 plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文字体
 plt.rcParams['axes.unicode_minus'] = False  # 负号显示
@@ -59,8 +59,12 @@ class FactorReportGenerator:
         ic_results = ic_analyzer.analyze_with_details(factor, config)
 
         # 2. 分组测试
-        group_analyzer = GroupAnalyzer(long_size=6, short_size=6)
-        group_results = group_analyzer.analyze(factor, config)
+        group_analyzer = LongShortAnalyzer(long_size=6, short_size=6)
+        group_results = group_analyzer.analyze(
+            factor,
+            config,
+            backtest_start_date=config.start_date,
+            backtest_end_date=config.end_date)
 
         # 3. 保存数据（JSON）
         metrics = {
