@@ -1,9 +1,9 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-
-# 设置变量区域
-# config.py
+# 数据源配置
+DATA_SOURCE = 'local'  # 'remote' or 'local'
+LOCAL_DB_PATH = 'financial_data.db'
 
 # 中信一级行业配置（29个行业）
 INDUSTRY_CONFIG = {
