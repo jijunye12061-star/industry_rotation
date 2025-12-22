@@ -162,13 +162,13 @@ if __name__ == '__main__':
     from factors.base import create_factor
 
     main_config = FactorConfig(
-        start_date='2021-01-01',
-        end_date='2025-03-31',
+        start_date='2013-01-31',
+        end_date='2023-12-29',
         frequency='monthly'
     )
 
     # 计算因子
-    factor_calculator = create_factor("upside_beta", window=21, winsorize=None)
+    factor_calculator = create_factor("momentum", window=21, preprocess=False)
     marginal_beta = factor_calculator(main_config)
 
     # IC分析

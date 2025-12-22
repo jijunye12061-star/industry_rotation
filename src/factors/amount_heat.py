@@ -105,8 +105,8 @@ class AmountHeatFactor(BaseFactor):
         if len(constituents) == 0:
             return np.nan
 
-        stock_codes = constituents['证券内码'].tolist()
-        weights = constituents.set_index('证券内码')['权重']
+        stock_codes = constituents['证券代码'].tolist()
+        weights = constituents.set_index('证券代码')['权重']
 
         # 2. 获取个股成交额
         amounts = loader.get_stock_amounts(stock_codes, data_start, date)

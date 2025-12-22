@@ -92,6 +92,13 @@ class BaseFactor(ABC):
         """
         logger.info(f"开始计算因子: {self.name}")
         factor_values = self.compute(config)
+
+        # 自动裁剪到回测区间（处理扩展期数据）
+        rebalance_dates = config.get_rebalance_dates()
+        if not factor_values.index.equals(rebalance_dates):
+            factor_values = factor_values.reindex(rebalance_dates)
+            logger.info(f"因子已裁剪到回测区间")
+
         logger.info(f"因子 {self.name} 计算完成，形状: {factor_values.shape}")
 
         # 自动预处理（如果开启）
