@@ -11,6 +11,7 @@ from typing import List, Optional, Union, Iterator
 
 import pandas as pd
 import oracledb
+import logging
 from dotenv import load_dotenv, find_dotenv
 from tqdm import tqdm
 from sqlalchemy import create_engine, text, Table, MetaData, Column, String
@@ -19,7 +20,7 @@ from sqlalchemy.pool import QueuePool
 
 # 加载环境变量
 load_dotenv(find_dotenv())
-oracledb.init_oracle_client()
+logger = logging.getLogger(__name__)
 
 
 class DatabaseConfig:
@@ -37,8 +38,8 @@ class DatabaseConfig:
             cls._instance.password = os.getenv('DB_PASSWORD')
 
             # Doris配置
-            cls._instance.c_host = os.getenv('DORIS_HOST').strip()
-            cls._instance.c_port = int(os.getenv('DORIS_PORT'))
+            cls._instance.c_host = os.getenv('DORIS_HOST')
+            cls._instance.c_port = os.getenv('DORIS_PORT')
             cls._instance.c_username = os.getenv('DORIS_USERNAME')
             cls._instance.c_password = os.getenv('DORIS_PASSWORD')
             cls._instance.c_database = os.getenv('DORIS_DATABASE')
@@ -52,8 +53,16 @@ class DatabaseConfig:
 
 class TytDataUtils:
     """Oracle数据库查询工具类"""
+    _initialized = False
 
     def __init__(self):
+        if not TytDataUtils._initialized:
+            try:
+                oracledb.init_oracle_client()
+                TytDataUtils._initialized = True
+            except Exception as e:
+                logger.warning(f"Oracle客户端初始化失败: {e}")
+                logger.warning("将仅使用本地SQLite数据库")
         self.db_config = DatabaseConfig()
         # 创建连接池
         self.pool = oracledb.create_pool(

@@ -4,6 +4,7 @@
 
 ## 核心功能
 
+- **数据静态化**：将数据获取与数据应用分离，将数据保存至本地
 - **因子开发**：模块化因子类，支持快速添加新因子
 - **单因子检验**：IC分析、分组回测、自动报告生成
 - **因子合成**：等权、IC加权等多种合成方法
@@ -15,7 +16,9 @@
 src/
 ├── config.py              # 全局配置（行业代码、数据库连接）
 ├── data/
-│   └── loader.py          # 统一数据接口（交易日历、价格、收益率）
+│   └── base_loader.py     # 统一数据接口（交易日历、价格、收益率）
+│   └── loader.py          # 具体数据接口，含数据库和本地数据实现
+│   └── db_manager.py      # 本地数据库实现
 ├── factors/
 │   ├── base.py            # 因子基类 + 注册机制
 │   ├── factor_config.py   # 因子配置类
@@ -27,11 +30,20 @@ src/
 ├── synthesis/
 │   └── combiner.py        # 因子合成
 └── utils/
-    ├── query_data_funcs.py    # 数据库查询
-    └── plot_funcs.py          # 可视化工具
+│   ├── query_data_from_choice.py    # 数据库查询
+│   └── plot_funcs.py                # 可视化工具
 ```
 
 ## 快速开始
+### 0. 配置
+主要是要配置一些参数和api接口的账密。
+
+- `config.py`中是指数代码的详情以及数据库加载方式
+- `.env`中需配置choice数据的账密
+```
+CHOICE_USERNAME=此处填写你的账号（手机号）
+CHOICE_PASSWORD=此处填写你的密码
+```
 
 ### 1. 计算单因子
 
@@ -103,8 +115,10 @@ print(f"IC胜率: {results['IC_win_rate']:.2%}")
 
 ### 4. 分组回测
 
+支持仅计算多头组和空头组的净值`LongShortAnalyzer`类与多分组回测`MultiGroupAnalyzer`两种方式
+
 ```python
-from evaluation.group_analysis import GroupAnalyzer
+from evaluation.group_analysis import LongShortAnalyzer
 from factors.base import create_factor
 
 # 配置回测参数
@@ -112,7 +126,7 @@ config = ...
 factor_calculator = create_factor("upside_beta", window=21, winsorize=None)
 factor_values = factor_calculator(config)
 
-analyzer = GroupAnalyzer(long_size=6, short_size=6)  # 表示多头组选择几个行业，空头组选择几个行业
+analyzer = LongShortAnalyzer(long_size=6, short_size=6)  # 表示多头组选择几个行业，空头组选择几个行业
 results = analyzer.analyze(factor_values, config)
 
 print("绩效指标:")
@@ -128,7 +142,7 @@ nav_curve = results['nav']  # 包含多头/空头/基准/多空组合
 ```
 DataFrame:
     index   = DatetimeIndex  # 调仓日期
-    columns = 行业代码        # '801010', '801020', ...
+    columns = 行业代码        # 'CI005001', 'CI005002', ...
     values  = 因子值/收益率
 ```
 

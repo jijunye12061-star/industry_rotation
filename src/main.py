@@ -9,22 +9,25 @@
 from factors.base import create_factor
 from evaluation.report_generator import generate_factor_report
 from factors.factor_config import FactorConfig
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
     # 配置
     config = FactorConfig(
-        start_date='2013-01-31',
+        start_date='2012-12-31',
         end_date='2023-12-29',
         frequency='monthly'
     )
 
     # 因子列表（直接写参数）
     factors_to_test = [
-        # {"factor_name": "marginal_average_momentum", "display_name": "边际平均动量", "window": 20},
+        {"factor_name": "marginal_average_momentum", "display_name": "边际平均动量"},
         # {"factor_name": "average_momentum", "display_name": "平均动量因子", "window": 20},
         # {"factor_name": "amount_volatility", "display_name": "成交额波动率", "window": 20},
-        {"factor_name": "super_large_volatility", "display_name": "超大单成交额波动率", "window": 20},
+        # {"factor_name": "large_order_volatility", "display_name": "超大单成交额波动率"},
         # {"factor_name": "day_elasticity", "display_name": "日度成交弹性"},
         # {"factor_name": "elasticity", "display_name": "成交弹性变化", "window": 20},
         # {"factor_name": "elasticity_momentum", "display_name": "成交弹性动量", "short_window": 21, "long_window": 63},
@@ -44,24 +47,25 @@ if __name__ == "__main__":
         factor_name = factor_info.pop("factor_name")
         display_name = factor_info.pop("display_name")
 
-        print(f"\n{'=' * 50}")
-        print(f"正在测试: {display_name}")
-        print(f"{'=' * 50}")
+        logger.info(f"\n{'=' * 50}")
+        logger.info(f"正在测试: {display_name}")
+        logger.info(f"{'=' * 50}")
 
         try:
             # 创建因子
             factor_creator = create_factor(factor_name, preprocess=False, **factor_info)
             factor_value = factor_creator(config)
+            logger.info("因子生成完成")
 
             # 生成报告
             report_path = generate_factor_report(factor_value, display_name, config)
-            print(f"✓ 报告已生成: {report_path}")
+            logger.info(f"✓ 报告已生成: {report_path}")
 
         except Exception as e:
-            print(f"✗ 因子 {display_name} 测试失败: {e}")
+            logger.info(f"✗ 因子 {display_name} 测试失败: {e}")
             continue
 
-    print("\n所有因子测试完成！")
+    logger.info("\n所有因子测试完成！")
 
     pass
 

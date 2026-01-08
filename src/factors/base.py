@@ -12,6 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Type, Optional, Callable, Literal, Union
 from factors.factor_config import FactorConfig
+from factors.cache_manager import get_cache
 import pandas as pd
 import logging
 
@@ -80,28 +81,35 @@ class BaseFactor(ABC):
         """
         pass
 
-    def __call__(self, config: 'FactorConfig') -> pd.DataFrame:
-        """
-        使因子对象可调用
+    def __call__(self, config: 'FactorConfig', use_cache: bool = True) -> pd.DataFrame:
+        """使因子对象可调用（支持缓存）"""
+        cache = get_cache()
 
-        Args:
-            config: 因子配置对象
+        # 尝试从缓存读取
+        if use_cache:
+            cached_data = cache.get(self.name, config, self.params)
+            if cached_data is not None:
+                logger.info(f"使用缓存的因子: {self.name}")
 
-        Returns:
-            因子值 DataFrame（可能经过预处理）
-        """
+                # 如果需要预处理且缓存的是原始值
+                if self.preprocess:
+                    cached_data = self.preprocess_factor(
+                        cached_data,
+                        standardize_method=self.standardize_method,
+                        winsorize=self.winsorize
+                    )
+                return cached_data
+
+        # 计算因子
         logger.info(f"开始计算因子: {self.name}")
         factor_values = self.compute(config)
-
-        # 自动裁剪到回测区间（处理扩展期数据）
-        rebalance_dates = config.get_rebalance_dates()
-        if not factor_values.index.equals(rebalance_dates):
-            factor_values = factor_values.reindex(rebalance_dates)
-            logger.info(f"因子已裁剪到回测区间")
-
         logger.info(f"因子 {self.name} 计算完成，形状: {factor_values.shape}")
 
-        # 自动预处理（如果开启）
+        # 写入缓存（缓存原始值，不缓存预处理后的）
+        if use_cache:
+            cache.set(self.name, config, self.params, factor_values)
+
+        # 预处理
         if self.preprocess:
             factor_values = self.preprocess_factor(
                 factor_values,

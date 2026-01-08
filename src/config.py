@@ -1,9 +1,12 @@
 import logging
 from logging.handlers import RotatingFileHandler
+from typing import Literal
 
 # 数据源配置
-DATA_SOURCE = 'local'  # 'remote' or 'local'
-LOCAL_DB_PATH = 'financial_data.db'
+DATA_SOURCE: Literal['remote', 'local'] = 'local'
+
+# 根据数据源自动选择市场代码
+MARKET_CODE = '000985' if DATA_SOURCE == 'local' else '1000157271'
 
 # 中信一级行业配置（29个行业）
 INDUSTRY_CONFIG = {
@@ -35,7 +38,7 @@ INDUSTRY_CONFIG = {
     'CI005026': {'name': '通信', 'inner_code': '1000414439'},
     'CI005027': {'name': '计算机', 'inner_code': '1000414440'},
     'CI005028': {'name': '传媒', 'inner_code': '1000414441'},
-    'CI005029': {'name': '综合', 'inner_code': '1000414442'},
+    # 'CI005029': {'name': '综合', 'inner_code': '1000414442'},
     # 'CI005030': {'name': '综合金融', 'inner_code': '1002118426'},
 }
 

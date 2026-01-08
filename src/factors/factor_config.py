@@ -22,7 +22,7 @@ class FactorConfig:
     start_date: str
     end_date: str
     frequency: Literal['monthly', 'biweekly', 'weekly', 'daily'] = 'monthly'
-    market_code: str = '000985.CSI'
+    market_code: str = '000985'
 
     def __post_init__(self):
         """验证日期格式"""

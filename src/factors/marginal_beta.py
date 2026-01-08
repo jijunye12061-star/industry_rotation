@@ -78,7 +78,9 @@ class MarginalBetaFactor(BaseFactor):
 
     def _calculate_rolling_beta(self, industry_ret: pd.DataFrame,
                                 market_ret: pd.Series) -> pd.DataFrame:
-        """滚动计算贝塔系数"""
+        """滚动计算贝塔系数（OLS回归，强制截距=0）"""
+        from sklearn.linear_model import LinearRegression
+
         # 对齐日期
         common_dates = industry_ret.index.intersection(market_ret.index)
         industry_ret = industry_ret.loc[common_dates]
@@ -101,9 +103,11 @@ class MarginalBetaFactor(BaseFactor):
 
                 y_clean, x_clean = y_win[mask], x_win[mask]
 
-                # 计算贝塔
+                # OLS回归（fit_intercept=False强制截距为0）
                 if len(x_clean) > 0 and x_clean.std() > 0:
-                    beta = np.cov(y_clean, x_clean)[0, 1] / np.var(x_clean)  # type: ignore
+                    model = LinearRegression(fit_intercept=False)
+                    model.fit(x_clean.reshape(-1, 1), y_clean)
+                    beta = model.coef_[0]
                     beta_df.iloc[i, beta_df.columns.get_loc(industry)] = beta
 
         return beta_df
@@ -166,16 +170,7 @@ class UpsideBetaFactor(BaseFactor):
     def _calculate_rolling_upside_beta(self,
                                        industry_ret: pd.DataFrame,
                                        market_ret: pd.Series) -> pd.DataFrame:
-        """
-        滚动计算上行贝塔系数（仅使用市场收益为正的日期）
-
-        Args:
-            industry_ret: 行业日收益率
-            market_ret: 市场日收益率
-
-        Returns:
-            上行贝塔系数 DataFrame
-        """
+        """滚动计算上行贝塔系数（OLS回归，强制截距=0，仅市场上行日）"""
         # 对齐日期
         common_dates = industry_ret.index.intersection(market_ret.index)
         industry_ret = industry_ret.loc[common_dates]
@@ -193,22 +188,22 @@ class UpsideBetaFactor(BaseFactor):
 
                 # 过滤 NaN
                 mask = ~(np.isnan(y_win) | np.isnan(x_win))
-                if mask.sum() < self.window * 0.5:  # 至少一半有效数据
+                if mask.sum() < self.window * 0.5:
                     continue
 
                 y_clean, x_clean = y_win[mask], x_win[mask]
 
                 # 筛选市场收益为正的日期
                 upside_mask = x_clean > 0
-                if upside_mask.sum() < 3:  # 至少3个上行日
+                if upside_mask.sum() < 3:
                     continue
 
                 y_upside = y_clean[upside_mask]
                 x_upside = x_clean[upside_mask]
 
-                # 计算上行贝塔
+                # OLS回归（无截距）：beta = (X'y) / (X'X)
                 if len(x_upside) > 0 and x_upside.std() > 0:
-                    beta = np.cov(y_upside, x_upside)[0, 1] / np.var(x_upside)  # type: ignore
+                    beta = np.dot(x_upside, y_upside) / np.dot(x_upside, x_upside)
                     beta_df.iloc[i, beta_df.columns.get_loc(industry)] = beta
 
         return beta_df
@@ -271,16 +266,7 @@ class DownsideBetaFactor(BaseFactor):
     def _calculate_rolling_downside_beta(self,
                                          industry_ret: pd.DataFrame,
                                          market_ret: pd.Series) -> pd.DataFrame:
-        """
-        滚动计算下行贝塔系数（仅使用市场收益为负的日期）
-
-        Args:
-            industry_ret: 行业日收益率
-            market_ret: 市场日收益率
-
-        Returns:
-            下行贝塔系数 DataFrame
-        """
+        """滚动计算下行贝塔系数（OLS回归，强制截距=0，仅市场下行日）"""
         # 对齐日期
         common_dates = industry_ret.index.intersection(market_ret.index)
         industry_ret = industry_ret.loc[common_dates]
@@ -298,22 +284,22 @@ class DownsideBetaFactor(BaseFactor):
 
                 # 过滤 NaN
                 mask = ~(np.isnan(y_win) | np.isnan(x_win))
-                if mask.sum() < self.window * 0.5:  # 至少一半有效数据
+                if mask.sum() < self.window * 0.5:
                     continue
 
                 y_clean, x_clean = y_win[mask], x_win[mask]
 
                 # 筛选市场收益为负的日期
                 downside_mask = x_clean < 0
-                if downside_mask.sum() < 3:  # 至少3个下行日
+                if downside_mask.sum() < 3:
                     continue
 
                 y_downside = y_clean[downside_mask]
                 x_downside = x_clean[downside_mask]
 
-                # 计算下行贝塔
+                # OLS回归（无截距）：beta = (X'y) / (X'X)
                 if len(x_downside) > 0 and x_downside.std() > 0:
-                    beta = np.cov(y_downside, x_downside)[0, 1] / np.var(x_downside)  # type: ignore
+                    beta = np.dot(x_downside, y_downside) / np.dot(x_downside, x_downside)
                     beta_df.iloc[i, beta_df.columns.get_loc(industry)] = beta
 
         return beta_df
