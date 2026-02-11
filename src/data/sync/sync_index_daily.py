@@ -11,16 +11,19 @@ from typing import Optional, List
 
 from data.decorators import parquet_cache
 from utils.query_data_from_choice import get_fetcher
-from config import INDUSTRY_CONFIG
+from config import INDUSTRY_CONFIG, BENCHMARK_CONFIG
 
 logger = logging.getLogger(__name__)
 
 # Choice 代码映射（集中定义）
-INDUSTRY_CODES = list(INDUSTRY_CONFIG.keys())
-CHOICE_CODES = [f"{code}.CI" for code in INDUSTRY_CODES] + ['000985.CSI']
+CHOICE_CODES = (
+    [f"{code}.CI" for code in INDUSTRY_CONFIG]
+    + [v['choice_code'] for v in BENCHMARK_CONFIG.values()]
+)
+
 CHOICE_TO_STD = {
-    **{f"{code}.CI": code for code in INDUSTRY_CODES},
-    '000985.CSI': '000985'
+    **{f"{code}.CI": code for code in INDUSTRY_CONFIG},
+    **{v['choice_code']: k for k, v in BENCHMARK_CONFIG.items()},
 }
 
 
@@ -40,13 +43,10 @@ def _fetch_index_daily(
     """从 Choice API 获取指数日线（装饰器自动管理缓存）"""
     fetcher = get_fetcher()
 
-    if index_codes:
-        choice_codes = [
-            f"{code}.CI" if code in INDUSTRY_CODES else code
-            for code in index_codes
-        ]
-    else:
-        choice_codes = CHOICE_CODES
+    choice_codes = [
+        f"{code}.CI" if code in INDUSTRY_CONFIG else code
+        for code in index_codes
+    ] if index_codes else CHOICE_CODES
 
     raw_data = fetcher.query(
         'csd',

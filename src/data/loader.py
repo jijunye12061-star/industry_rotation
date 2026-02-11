@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional, Dict, Tuple
 
-from config import MARKET_CODE, INDUSTRY_CONFIG
+from config import DEFAULT_BENCHMARK, INDUSTRY_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +184,7 @@ class DataLoader:
 
     def get_market_prices(
             self, start_date: str, end_date: str,
-            market_code: str = MARKET_CODE
+            market_code: str = DEFAULT_BENCHMARK
     ) -> pd.Series:
         """市场指数收盘价"""
         df = self.read_parquet(
@@ -197,7 +197,7 @@ class DataLoader:
 
     def get_market_returns(
             self, start_date: str, end_date: str,
-            market_code: str = MARKET_CODE
+            market_code: str = DEFAULT_BENCHMARK
     ) -> pd.Series:
         """市场指数日收益率"""
         df = self.read_parquet(
@@ -212,17 +212,16 @@ class DataLoader:
     # ==================== 收益率 ====================
 
     def get_industry_returns(self, start_date: str, end_date: str) -> pd.DataFrame:
-        """行业日收益率 (日期 × 行业代码)"""
-        prices = self.get_industry_prices(start_date, end_date)
-        return prices.pct_change().dropna(how='all')
+        """行业日收益率: close / preclose - 1 (日期 × 行业代码)"""
+        close = self._get_index_field(start_date, end_date, 'close')
+        preclose = self._get_index_field(start_date, end_date, 'preclose')
+        return (close / preclose - 1).dropna(how='all')
 
     def get_industry_overnight_returns(self, start_date: str, end_date: str) -> pd.DataFrame:
         """行业隔夜收益率: (open - preclose) / preclose"""
-        open_prices = self.get_industry_open_prices(start_date, end_date)
-        preclose = self.get_industry_preclose(start_date, end_date)
-        # 对齐索引
-        common_idx = open_prices.index.intersection(preclose.index)
-        return (open_prices.loc[common_idx] - preclose.loc[common_idx]) / preclose.loc[common_idx]
+        open_prices = self._get_index_field(start_date, end_date, 'open')
+        preclose = self._get_index_field(start_date, end_date, 'preclose')
+        return (open_prices / preclose - 1).dropna(how='all')
 
     def get_forward_returns(
             self,
@@ -285,10 +284,10 @@ def get_industry_prices(start_date: str, end_date: str) -> pd.DataFrame:
 def get_industry_returns(start_date: str, end_date: str) -> pd.DataFrame:
     return get_loader().get_industry_returns(start_date, end_date)
 
-def get_market_returns(start_date: str, end_date: str, market_code: str = MARKET_CODE) -> pd.Series:
+def get_market_returns(start_date: str, end_date: str, market_code: str = DEFAULT_BENCHMARK) -> pd.Series:
     return get_loader().get_market_returns(start_date, end_date, market_code)
 
 
 if __name__ == '__main__':
     loader = get_loader()
-    test_data = loader.get_market_returns('2024-12-31', '2025-12-31', '000985')
+    test_data = loader.get_industry_returns('2025-12-01', '2025-12-31')
