@@ -1,12 +1,8 @@
 import logging
 from logging.handlers import RotatingFileHandler
-from typing import Literal
-
-# 数据源配置
-DATA_SOURCE: Literal['remote', 'local'] = 'local'
 
 # 根据数据源自动选择市场代码
-MARKET_CODE = '000985' if DATA_SOURCE == 'local' else '1000157271'
+MARKET_CODE = '000985'
 
 # 中信一级行业配置（29个行业）
 INDUSTRY_CONFIG = {
@@ -40,6 +36,30 @@ INDUSTRY_CONFIG = {
     'CI005028': {'name': '传媒', 'inner_code': '1000414441'},
     # 'CI005029': {'name': '综合', 'inner_code': '1000414442'},
     # 'CI005030': {'name': '综合金融', 'inner_code': '1002118426'},
+}
+
+# 宽基指数配置
+BENCHMARK_CONFIG = {
+    '000300': {
+        'name': '沪深300',
+        'choice_code': '000300.SH'
+    },
+    '000905': {
+        'name': '中证500',
+        'choice_code': '000905.CSI'
+    },
+    '000985': {
+        'name': '中证全指',
+        'choice_code': '000985.CSI'
+    },
+    '000016': {
+        'name': '上证50',
+        'choice_code': '000016.SH'
+    },
+    '399006': {
+        'name': '创业板指',
+        'choice_code': '399006.SZ'
+    },
 }
 
 # 便捷访问函数

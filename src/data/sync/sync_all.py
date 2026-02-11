@@ -1,136 +1,115 @@
-# src/data/sync/sync_all.py
-# !/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
-@author: jijunye
-@file: sync_all.py
-@time: 2025/01/05
-@description:
-数据同步统一入口
+数据同步统一入口 - 注册式调度
+
+使用方式:
+    python -m data.sync.sync_all --init              # 全量初始化 (2012-2025)
+    python -m data.sync.sync_all                     # 增量更新 (近5天)
+    python -m data.sync.sync_all --start 2024-01-01  # 指定起始日期
+
+扩展新表:
+    在 SYNC_STEPS 列表中新增一行即可
 """
 import pandas as pd
 import logging
+import sys
 from datetime import datetime
-from typing import Optional
+from typing import Callable, List, Tuple
 
 logger = logging.getLogger(__name__)
 
+# ==================== 同步注册表 ====================
+# 格式: (步骤名, 同步函数路径, 是否按月分批)
+# 新增数据表只需在这里加一行
 
-def sync_by_periods(sync_func, start_date: str, end_date: str, freq: str = 'M'):
-    """
-    按时间周期分批同步
+SYNC_STEPS: List[Tuple[str, str, bool]] = [
+    ("交易日历",   "data.sync.trading_calendar:get_trading_calendar", False),
+    ("指数日线",   "data.sync.sync_index_daily:sync_index_daily",    True),
+    ("大单数据",   "data.sync.sync_index_large_order:sync_large_order", True),
+    # ("ETF日线",  "data.sync.sync_etf_daily:sync_etf_daily",        True),
+    # 新表在这里注册...
+]
 
-    Args:
-        sync_func: 同步函数（如 sync_index_daily）
-        start_date: 开始日期
-        end_date: 结束日期
-        freq: 频率 ('M'=月, 'Y'=年)
 
-    Returns:
-        总记录数
-    """
-    periods = pd.period_range(start_date, end_date, freq=freq)
+def _import_func(path: str) -> Callable:
+    """动态导入函数: 'module.path:func_name' → callable"""
+    module_path, func_name = path.rsplit(':', 1)
+    import importlib
+    module = importlib.import_module(module_path)
+    return getattr(module, func_name)
+
+
+def sync_by_periods(sync_func: Callable, start_date: str, end_date: str, freq: str = 'M') -> int:
+    """按月分批同步"""
     total = 0
-
-    for period in periods:
-        period_start = period.start_time.strftime('%Y-%m-%d')
-        period_end = period.end_time.strftime('%Y-%m-%d')
-
+    for period in pd.period_range(start_date, end_date, freq=freq):
+        p_start = period.start_time.strftime('%Y-%m-%d')
+        p_end = period.end_time.strftime('%Y-%m-%d')
         try:
-            count = sync_func(period_start, period_end)
+            count = sync_func(p_start, p_end)
             total += count
-            logger.info(f"  {period}: {count} 条")
         except Exception as e:
             logger.error(f"  {period} 失败: {e}")
-
     return total
 
 
-def sync_all_init(start_date: str = '2015-01-01',
-                  end_date: str = '2030-12-31'):
+def sync_all(start_date: str, end_date: str, batch: bool = True):
     """
-    初始化：全量同步所有表
+    执行所有同步步骤
 
     Args:
-        start_date: 历史起始日期
+        start_date: 起始日期
         end_date: 结束日期
+        batch: 是否按月分批（全量初始化时使用）
     """
-    logger.info("=" * 60)
-    logger.info(f"全量初始化同步: {start_date} -> {end_date}")
-    logger.info("=" * 60)
+    logger.info(f"{'=' * 60}")
+    logger.info(f"数据同步: {start_date} → {end_date}")
+    logger.info(f"{'=' * 60}")
 
-    # 1. 交易日历
-    logger.info("\n[1/3] 初始化交易日历...")
-    from data.sync.trading_calendar import get_trading_calendar
-    get_trading_calendar(start_date, end_date, force_update=True)
+    for i, (name, func_path, can_batch) in enumerate(SYNC_STEPS, 1):
+        step_label = f"[{i}/{len(SYNC_STEPS)}] {name}"
+        logger.info(f"\n{step_label}...")
 
-    # 2. 指数日线（按月）
-    logger.info("\n[2/3] 初始化指数日线...")
-    from data.sync.sync_index_daily import sync_index_daily
-    total = sync_by_periods(sync_index_daily, start_date, end_date, freq='M')
-    logger.info(f"指数日线完成: {total} 条")
+        func = _import_func(func_path)
 
-    # 3. 大单数据（按月）
-    logger.info("\n[3/3] 初始化大单数据...")
-    from data.sync.sync_index_large_order import sync_large_order
-    total = sync_by_periods(sync_large_order, start_date, end_date, freq='M')
-    logger.info(f"大单数据完成: {total} 条")
+        if name == "交易日历":
+            # 交易日历特殊处理（不返回 count）
+            func(start_date, end_date)
+            continue
 
-    logger.info("\n" + "=" * 60)
-    logger.info("全量初始化完成")
-    logger.info("=" * 60)
+        if batch and can_batch:
+            total = sync_by_periods(func, start_date, end_date)
+        else:
+            total = func(start_date, end_date)
+
+        logger.info(f"  {name}: {total} 条")
+
+    logger.info(f"\n{'=' * 60}")
+    logger.info("同步完成")
 
 
-def sync_all_incremental(end_date: Optional[str] = None, lookback_days: int = 5):
-    """
-    增量同步：更新最近N天数据
-
-    Args:
-        end_date: 结束日期（默认今天）
-        lookback_days: 回看天数
-    """
-    if end_date is None:
-        end_date = datetime.now().strftime('%Y-%m-%d')
-
+def sync_incremental(lookback_days: int = 5):
+    """增量同步最近 N 天"""
+    end_date = datetime.now().strftime('%Y-%m-%d')
     start_date = (pd.to_datetime(end_date) - pd.Timedelta(days=lookback_days)).strftime('%Y-%m-%d')
-
-    logger.info("=" * 60)
-    logger.info(f"增量同步: {start_date} -> {end_date}")
-    logger.info("=" * 60)
-
-    # 1. 交易日历
-    logger.info("\n[1/3] 更新交易日历...")
-    from data.sync.trading_calendar import get_trading_calendar
-    get_trading_calendar(start_date, end_date)
-
-    # 2. 指数日线
-    logger.info("\n[2/3] 更新指数日线...")
-    from data.sync.sync_index_daily import sync_index_daily
-    count = sync_index_daily(start_date, end_date)
-    logger.info(f"指数日线: {count} 条")
-
-    # 3. 大单数据
-    logger.info("\n[3/3] 更新大单数据...")
-    from data.sync.sync_index_large_order import sync_large_order
-    count = sync_large_order(start_date, end_date)
-    logger.info(f"大单数据: {count} 条")
-
-    logger.info("\n" + "=" * 60)
-    logger.info("增量同步完成")
-    logger.info("=" * 60)
+    sync_all(start_date, end_date, batch=False)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO
-    )
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    # import sys
-    #
-    # if len(sys.argv) > 1 and sys.argv[1] == '--init':
-    #     # 全量初始化
-    #     sync_all_init('2015-01-01', '2030-12-31')
-    # else:
-    #     # 增量更新（默认）
-    #     sync_all_incremental(lookback_days=5)
-    sync_all_init('2012-01-01', '2025-12-31')
+    if '--init' in sys.argv:
+        start = '2012-01-01'
+        end = '2025-12-31'
+        # 支持 --start 参数
+        if '--start' in sys.argv:
+            idx = sys.argv.index('--start')
+            start = sys.argv[idx + 1]
+        sync_all(start, end, batch=True)
+    else:
+        if '--start' in sys.argv:
+            idx = sys.argv.index('--start')
+            start = sys.argv[idx + 1]
+            end = datetime.now().strftime('%Y-%m-%d')
+            sync_all(start, end, batch=False)
+        else:
+            sync_incremental()

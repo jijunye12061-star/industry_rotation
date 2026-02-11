@@ -244,7 +244,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.ERROR)
 
     loader = ETFLoader()
-    selector = ETFSelector(loader, min_scale=5e8)
+    selector = ETFSelector(loader, min_scale=1e8)
     main_mapping = selector.select_etfs("2017-01-26")
 
     # from factors.factor_config import FactorConfig

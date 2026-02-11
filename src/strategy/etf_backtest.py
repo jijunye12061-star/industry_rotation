@@ -92,6 +92,7 @@ class ETFBacktest:
 
         # 5. 计算绩效指标
         metrics = self._calculate_metrics(nav_series, turnover_series, positions.index)
+        yearly_returns = self._calculate_yearly_returns(nav_series)
 
         # 6. 基准对比
         benchmark_nav = None
@@ -101,7 +102,7 @@ class ETFBacktest:
                 benchmark_etf, etf_prices, backtest_dates
             )
         elif use_industry_benchmark:
-            benchmark_nav = self._calculate_industry_benchmark(start_date, end_date)
+            benchmark_nav = self._calculate_industry_benchmark(start_date, end_date, backtest_dates)
             benchmark_nav = benchmark_nav.reindex(backtest_dates).fillna(method='ffill')
 
         if benchmark_nav is not None:
@@ -115,7 +116,8 @@ class ETFBacktest:
             'nav': nav_series,
             'metrics': metrics,
             'turnover': turnover_series,
-            'holdings': holdings_df
+            'holdings': holdings_df,
+            'yearly_returns': yearly_returns
         }
 
     def _calculate_nav(self,
@@ -257,20 +259,55 @@ class ETFBacktest:
         nav = self.initial_capital * (prices / prices.iloc[0])
         return nav
 
+    @staticmethod
+    def _calculate_yearly_returns(nav: pd.Series) -> pd.DataFrame:
+        """计算分年度收益"""
+        yearly_data = []
+
+        for year in nav.index.year.unique():
+            year_nav = nav[nav.index.year == year]
+            if len(year_nav) < 2:
+                continue
+
+            year_return = (year_nav.iloc[-1] / year_nav.iloc[0] - 1) * 100
+            yearly_data.append({
+                'year': year,
+                'return': year_return,
+                'start_nav': year_nav.iloc[0],
+                'end_nav': year_nav.iloc[-1]
+            })
+
+        return pd.DataFrame(yearly_data).set_index('year')
+
+    # def _calculate_industry_benchmark(self,
+    #                                   start_date: str,
+    #                                   end_date: str) -> pd.Series:
+    #     """计算行业等权基准"""
+    #     from data.loader import get_loader
+    #
+    #     ind_loader = get_loader()
+    #     industry_returns = ind_loader.get_industry_returns(start_date, end_date)
+    #
+    #     # 等权组合日收益 = 各行业日收益的均值
+    #     equal_weight_returns = industry_returns.mean(axis=1) / 100  # 转为小数
+    #
+    #     # 累计净值
+    #     nav = (1 + equal_weight_returns).cumprod() * self.initial_capital
+    #     return nav
+
     def _calculate_industry_benchmark(self,
                                       start_date: str,
-                                      end_date: str) -> pd.Series:
-        """计算行业等权基准"""
+                                      end_date: str,
+                                      backtest_dates: pd.DatetimeIndex) -> pd.Series:
+        """计算中证全指基准（买入持有）"""
         from data.loader import get_loader
 
         ind_loader = get_loader()
-        industry_returns = ind_loader.get_industry_returns(start_date, end_date)
+        market_prices = ind_loader.get_market_prices(start_date, end_date, market_code='000985')
 
-        # 等权组合日收益 = 各行业日收益的均值
-        equal_weight_returns = industry_returns.mean(axis=1) / 100  # 转为小数
-
-        # 累计净值
-        nav = (1 + equal_weight_returns).cumprod() * self.initial_capital
+        # 对齐到回测日期
+        prices = market_prices.reindex(backtest_dates, method='ffill')
+        nav = self.initial_capital * (prices / prices.iloc[0])
         return nav
 
 
@@ -292,9 +329,6 @@ def format_metrics(metrics: Dict) -> pd.DataFrame:
         data['超额收益(%)'] = f"{metrics['excess_return']:.2f}"
 
     return pd.DataFrame([data]).T.rename(columns={0: '策略'})
-
-
-
 
 
 if __name__ == '__main__':
@@ -320,7 +354,7 @@ if __name__ == '__main__':
         test_positions,
         start_date='2016-12-30',
         end_date='2025-12-31',
-        use_industry_benchmark=True  # 使用行业等权基准
+        use_industry_benchmark=True  # 使用中证全指
     )
 
     # 输出结果

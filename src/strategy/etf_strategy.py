@@ -146,4 +146,4 @@ if __name__ == '__main__':
     )
     print("\n动态前20%（前3期）:")
     print(positions_dynamic.head(15))
-    positions_dynamic.to_parquet(r'./positions_dynamic.parquet')
+    # positions_dynamic.to_parquet(r'./positions_dynamic.parquet')
