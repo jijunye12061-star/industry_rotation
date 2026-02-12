@@ -84,17 +84,10 @@ class DataLoader:
         missing = []
 
         # 遍历每个月的分区文件
-        for month_start in pd.date_range(
-            start.to_period('M').to_timestamp(),
-            end.to_period('M').to_timestamp(),
-            freq='MS'
-        ):
-            year = month_start.strftime('%Y')
-            month = month_start.strftime('%m')
-            month_end = (month_start + pd.offsets.MonthEnd(0)).strftime('%Y-%m-%d')
-            month_start_str = month_start.strftime('%Y-%m-%d')
-
-            filepath = self.data_dir / table_name / year / month / f"{month_start_str}_{month_end}.parquet"
+        for period in pd.period_range(start, end, freq='M'):
+            year = period.strftime('%Y')
+            month = period.strftime('%m')
+            filepath = self.data_dir / table_name / year / f"{year}{month}.parquet"
 
             if not filepath.exists():
                 missing.append(str(filepath))

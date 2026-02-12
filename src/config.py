@@ -41,9 +41,13 @@ INDUSTRY_CONFIG: dict[str, str] = {
 BENCHMARK_CONFIG: dict[str, dict] = {
     '000985': {'name': '中证全指', 'choice_code': '000985.CSI'},
     '000300': {'name': '沪深300',  'choice_code': '000300.SH'},
-    '000905': {'name': '中证500',  'choice_code': '000905.CSI'},
+    '000905': {'name': '中证500',  'choice_code': '000905.SH'},
     '000016': {'name': '上证50',   'choice_code': '000016.SH'},
     '399006': {'name': '创业板指', 'choice_code': '399006.SZ'},
+    '000906': {'name': '中证800', 'choice_code': '000906.SH'},
+    '000852': {'name': '中证1000', 'choice_code': '000852.SH'},
+    '399303': {'name': '国证2000', 'choice_code': '399303.SZ'},
+    '000688': {'name': '科创50', 'choice_code': '000688.SH'}
 }
 
 DEFAULT_BENCHMARK = '000985'  # 默认回测基准

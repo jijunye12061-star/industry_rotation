@@ -31,9 +31,7 @@ CHOICE_TO_STD = {
     table="tb_index_daily",
     keys=['trade_date', 'index_code'],
     date_col='trade_date',
-    overlap_days=3,
-    partition_by='month',
-    auto_split=True
+    overlap_days=3
 )
 def _fetch_index_daily(
         start_date: str,
@@ -88,4 +86,4 @@ def sync_index_daily(start_date: str, end_date: str) -> int:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    sync_index_daily('2024-11-01', '2024-12-31')
+    sync_index_daily('2012-01-01', '2026-02-11')

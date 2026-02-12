@@ -1,20 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-@author: jijunye
-@file: factor_config.py
-@time: 2025/12/10 17:00
-@description:
 因子计算通用配置类
 """
-
 import pandas as pd
 from dataclasses import dataclass
 from typing import Literal
-from data.loader import get_loader
 from datetime import timedelta
-
-loader = get_loader()
 
 
 @dataclass
@@ -30,17 +22,9 @@ class FactorConfig:
         pd.to_datetime(self.end_date)
 
     def _compute_rebalance_dates(self, start_date: str, end_date: str) -> pd.DatetimeIndex:
-        """
-        计算调仓日的通用逻辑
-
-        Args:
-            start_date: 开始日期
-            end_date: 结束日期
-
-        Returns:
-            调仓日期序列
-        """
-        trading_dates = loader.get_trading_dates(start_date, end_date)
+        """计算调仓日"""
+        from data.loader import get_loader
+        trading_dates = get_loader().get_trading_dates(start_date, end_date)
 
         if self.frequency == 'daily':
             return trading_dates
@@ -73,12 +57,6 @@ class FactorConfig:
     def get_extended_rebalance_dates(self, extra_periods: int = 1) -> pd.DatetimeIndex:
         """
         获取扩展后的调仓日（用于因子计算）
-
-        Args:
-            extra_periods: 向前扩展的期数（默认1）
-
-        Returns:
-            扩展后的调仓日期序列
 
         Example:
             正常调仓日: [2024-01-31, 2024-02-29, 2024-03-31]

@@ -3,12 +3,12 @@ import pandas as pd
 import time
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 import os
 import logging
 
 logger = logging.getLogger(__name__)
-load_dotenv()
+load_dotenv(find_dotenv())
 
 
 class RateLimiter:
@@ -110,7 +110,8 @@ class ChoiceDataFetcher:
                     logger.error(f"Query failed after {self.max_retries} attempts")
                     raise
 
-    def _execute_query(self, query_type: str, **params) -> Any:
+    @staticmethod
+    def _execute_query(query_type: str, **params) -> Any:
         """执行具体查询"""
         query_map = {
             'csd': lambda: c.csd(

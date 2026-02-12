@@ -6,7 +6,7 @@ from typing import Dict, List
 import logging
 
 from strategy.etf_loader import ETFLoader
-from src.config import INDUSTRY_CONFIG
+from config import INDUSTRY_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +180,7 @@ class ETFSelector:
         print(f"{'-' * 70}")
 
         for ci_code, etf_code in sorted(mapping.items()):
-            industry_name = INDUSTRY_CONFIG.get(ci_code, {}).get('name', '未知')
+            industry_name = INDUSTRY_CONFIG.get(ci_code, '未知')
             etf_name = etf_names.get(etf_code, '未知')
             print(f"{ci_code:<12} {industry_name:<15} {etf_code:<12} {etf_name:<20}")
 
@@ -194,7 +194,7 @@ class ETFSelector:
             print(f"未匹配行业 ({len(unmatched)}个):")
             print(f"{'-' * 70}")
             for ci_code in sorted(unmatched):
-                industry_name = INDUSTRY_CONFIG[ci_code]['name']
+                industry_name = INDUSTRY_CONFIG[ci_code]
                 print(f"{ci_code:<12} {industry_name:<15}")
 
         print(f"{'=' * 70}\n")
