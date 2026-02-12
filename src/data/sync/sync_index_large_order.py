@@ -24,9 +24,7 @@ CHOICE_TO_STD = {f"{code}.CI": code for code in INDUSTRY_CODES}
     table="tb_index_large_order",
     keys=['trade_date', 'index_code'],
     date_col='trade_date',
-    overlap_days=3,
-    partition_by='month',
-    auto_split=True
+    overlap_days=3
 )
 def _fetch_large_order(
         start_date: str,
@@ -78,4 +76,4 @@ def sync_large_order(start_date: str, end_date: str) -> int:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    sync_large_order('2024-01-01', '2024-12-31')
+    sync_large_order('2012-01-01', '2026-02-11')

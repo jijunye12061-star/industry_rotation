@@ -283,4 +283,4 @@ def get_market_returns(start_date: str, end_date: str, market_code: str = DEFAUL
 
 if __name__ == '__main__':
     loader = get_loader()
-    test_data = loader.get_industry_returns('2025-12-01', '2025-12-31')
+    test_data = loader.get_trading_dates('2026-01-20', '2026-02-11')

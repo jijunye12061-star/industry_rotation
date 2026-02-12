@@ -10,7 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-CALENDAR_FILE = Path(__file__).resolve().parents[2] / "data" / "trading_calendar" / "calendar.parquet"
+CALENDAR_FILE = Path(__file__).resolve().parents[3] / "data" / "trading_calendar" / "calendar.parquet"
 
 
 def get_trading_calendar(

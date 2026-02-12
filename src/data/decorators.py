@@ -15,6 +15,9 @@ from typing import List
 from datetime import datetime
 import pandas as pd
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
@@ -75,8 +78,10 @@ def _process_month(func, ba, table, keys, date_col, overlap_days,
 
     # sealed 且缓存存在 → 直接返回
     if sealed and filepath.exists():
+        logger.info(f"[{table}] {year}-{month} 缓存命中，跳过")
         return pd.read_parquet(filepath)
 
+    logger.info(f"[{table}] {year}-{month} 查询 API: {api_start} → {api_end}")
     # 缓存不存在 → 全量查询并存储
     if not filepath.exists():
         ba.arguments['start_date'] = api_start
